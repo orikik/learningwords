@@ -36,6 +36,18 @@ public class UserRepositoryTest extends TestBase {
         assertUser(res, userEntity);
     }
 
+    @Test
+    public void getFindByUsername() {
+        UserEntity userEntity = new UserEntity();
+        userEntity.setUsername("testname");
+        userEntity.setPassword("testblabalatest");
+        userRepository.save(userEntity);
+
+        UserEntity res = userRepository.findByUsername(userEntity.getUsername()).get();
+
+        assertUser(res, userEntity);
+    }
+
     @Test(expected = NoSuchElementException.class)
     public void deleteUserByIdTest() {
         UserEntity userEntity = new UserEntity();
