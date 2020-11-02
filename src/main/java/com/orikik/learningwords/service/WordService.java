@@ -1,6 +1,7 @@
 package com.orikik.learningwords.service;
 
 import com.orikik.learningwords.converter.WordConverter;
+import com.orikik.learningwords.dao.WordDao;
 import com.orikik.learningwords.dto.WordDto;
 import com.orikik.learningwords.entity.RepetitionEntity;
 import com.orikik.learningwords.entity.RepetitionKey;
@@ -28,6 +29,8 @@ public class WordService {
     private RepetitionService repetitionService;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private WordDao wordDao;
 
     public List<WordDto> getWordsForRepeat(String username) {
         Optional<UserEntity> userOptional = userRepository.findByUsername(username);
@@ -37,6 +40,16 @@ public class WordService {
         }
         UserEntity userEntity = userOptional.get();
         List<WordEntity> wordEntities = getOldWordsForRepeat(userEntity);
+        if (wordEntities.size() > WORD_COUNT) {
+            throw new IllegalArgumentException();
+        }
+
+        if (wordEntities.size() == WORD_COUNT) {
+            return WordConverter.convert(wordEntities);
+        }
+        Integer countOfNewWords = WORD_COUNT - wordEntities.size();
+        wordEntities.addAll(getNewWordsForRepeat(countOfNewWords, userEntity));
+
         return WordConverter.convert(wordEntities);
 
     }
@@ -58,6 +71,17 @@ public class WordService {
                 break;
             }
         }
+        return wordEntities;
+    }
+
+    public List<WordEntity> getNewWordsForRepeat(Integer countOfNewWords, UserEntity userEntity) {
+        List<WordEntity> wordEntities = wordDao.getNewWordsForRepetitonByUserId(userEntity.getId(), countOfNewWords);
+        List<RepetitionEntity> repetitionEntities = new ArrayList<>();
+        for (WordEntity wordEntity : wordEntities) {
+            RepetitionEntity repetitionEntity = new RepetitionEntity(userEntity, wordEntity);
+            repetitionEntities.add(repetitionEntity);
+        }
+        repetitionRepository.saveAll(repetitionEntities);
         return wordEntities;
     }
 

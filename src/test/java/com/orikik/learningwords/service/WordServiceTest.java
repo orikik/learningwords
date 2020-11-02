@@ -1,6 +1,7 @@
 package com.orikik.learningwords.service;
 
 import com.orikik.learningwords.TestBase;
+import com.orikik.learningwords.dao.WordDao;
 import com.orikik.learningwords.dto.WordDto;
 import com.orikik.learningwords.entity.RepetitionEntity;
 import com.orikik.learningwords.entity.UserEntity;
@@ -37,8 +38,24 @@ public class WordServiceTest extends TestBase {
     private RepetitionRepository repetitionRepository;
     @MockBean
     private RepetitionService repetitionService;
+    @MockBean
+    private WordDao wordDao;
     @Autowired
     private WordService wordService;
+
+    @Test
+    public void getWordsForRepeatTest() {
+        UserEntity userEntity = generateUserEntity();
+        when(userRepository.findByUsername(any()))
+                .thenReturn(java.util.Optional.of(userEntity));
+        when(repetitionRepository.findByUserEntityId(any()))
+                .thenReturn(java.util.Optional.of(createRepetitionEntityList()));
+        when(wordDao.getNewWordsForRepetitonByUserId(any(), any()))
+                .thenReturn(createWordEntityList(6, 11));
+        List<WordDto> wordEntities = wordService.getWordsForRepeat(userEntity.getUsername());
+        assertNotNull(wordEntities);
+        assertEquals(10, wordEntities.size());
+    }
 
     @Test
     public void getOldWordsForRepeatTest() {
@@ -48,7 +65,17 @@ public class WordServiceTest extends TestBase {
         List<WordEntity> wordEntities = wordService.getOldWordsForRepeat(userEntity);
         assertNotNull(wordEntities);
         assertEquals(4, wordEntities.size());
-        assertEquals(2L, wordEntities.get(0).getId().longValue());
+        assertEquals(2, wordEntities.get(0).getId().longValue());
+    }
+
+    @Test
+    public void getNewWordsForRepeatTest() {
+        UserEntity userEntity = generateUserEntity();
+        when(wordDao.getNewWordsForRepetitonByUserId(any(), any()))
+                .thenReturn(createWordEntityList(6, 11));
+        List<WordEntity> wordEntities = wordService.getNewWordsForRepeat(6, userEntity);
+        assertNotNull(wordEntities);
+        assertEquals(6, wordEntities.size());
     }
 
     @Test
